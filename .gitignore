@@ -1,0 +1,27 @@
+# compiled output
+/dist
+
+# dependencies
+/node_modules
+
+# IDE
+/.idea
+/.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# env files
+.env
+.env.*
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# claude
+.claude/
