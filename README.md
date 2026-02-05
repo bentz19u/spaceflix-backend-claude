@@ -1,7 +1,7 @@
 ## Description
 
 An inspired by netflix website, for practice purpose, backend side. 
-/initThis version was made using Claude code, it's supposed to have the same features as my other project `spaceflix-backend` for comparison purpose.
+This version was made using Claude code, it's supposed to have the same features as my other project `spaceflix-backend` for comparison purpose.
 
 ## Project setup
 

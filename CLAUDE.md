@@ -38,3 +38,7 @@ NestJS modular structure rooted in `AppModule` (`src/app.module.ts`). New featur
 
 - Prettier: single quotes, no semicolons, trailing commas, 120 char width
 - ESLint: flat config (`eslint.config.mjs`), `no-explicit-any` allowed, floating promises and unsafe arguments are warnings
+
+## Project Preferences
+
+- **No .spec.ts files**: When creating new modules, do not generate `.spec.ts` test files for controllers, services, or other components.

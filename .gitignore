@@ -14,9 +14,9 @@
 .DS_Store
 Thumbs.db
 
-# env files
-.env
-.env.*
+# env files (local overrides)
+.env.local
+.env.test.local
 
 # debug
 npm-debug.log*
