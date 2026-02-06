@@ -1,0 +1,20 @@
+{
+  "REQUIRED": "Le champ {property} est requis.",
+  "REQUIRED_NO_PROPERTY": "Ce champ est requis.",
+  "NOT_STRING": "Le champ {property} doit être une chaîne de caractères.",
+  "NOT_NUMBER": "Le champ {property} doit contenir uniquement des chiffres.",
+  "NOT_ALPHA": "Le champ {property} ne peut contenir que des lettres.",
+  "NOT_EMAIL": "Le champ {property} doit être une adresse e-mail valide.",
+  "NOT_MATCH": "Le champ {property} ne correspond pas à {constraints.0}.",
+  "PASSWORD_NOT_MATCH": "Les mots de passe ne correspondent pas.",
+  "IS_SAME": "Le champ {property} est identique à {constraints.0}.",
+  "NOT_VALID": "Le champ {property} n'est pas valide.",
+  "MIN": "Le champ {property} doit contenir au moins {constraints.0} caractères.",
+  "MAX": "Le champ {property} ne peut pas dépasser {constraints.0} caractères.",
+  "BETWEEN": "Le champ {property} doit contenir entre {constraints.0} et {constraints.1} caractères.",
+  "BETWEEN_NUMBER": "Le champ {property} doit être compris entre {constraints.0} et {constraints.1}.",
+  "LESS_THAN_EQUAL_TO": "Le champ {property} doit contenir un nombre inférieur ou égal à {constraints.0}.",
+  "GREATER_THAN_EQUAL_TO": "Le champ {property} doit contenir un nombre supérieur ou égal à {constraints.0}.",
+  "IN_LIST": "Le champ {property} doit être l'un des suivants : {list}.",
+  "INVALID_PASSWORD": "Le mot de passe est invalide."
+}

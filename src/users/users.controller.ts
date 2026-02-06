@@ -1,9 +1,15 @@
 import { Controller, Get, Query } from '@nestjs/common'
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { IsRegistrableQueryDto, IsRegistrableResponseDto } from './dto/is-registrable.dto'
 import { UserService } from './users.service'
 
 @ApiTags('users')
+@ApiHeader({
+  name: 'x-custom-lang',
+  description: 'Language for validation messages',
+  required: false,
+  enum: ['en', 'fr'],
+})
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}

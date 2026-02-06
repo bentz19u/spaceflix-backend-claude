@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication, ValidationPipe } from '@nestjs/common'
+import { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { App } from 'supertest/types'
 import { DataSource } from 'typeorm'
-import { AppModule } from './../src/app.module'
-import { User } from './../src/users/users.entity'
+import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
+import { AppModule } from '../src/app.module'
+import { User } from '../src/users/users.entity'
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication<App>
@@ -21,7 +22,8 @@ describe('UsersController (e2e)', () => {
     }).compile()
 
     app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(new ValidationPipe({ transform: true }))
+    app.useGlobalPipes(new I18nValidationPipe({ transform: true }))
+    app.useGlobalFilters(new I18nValidationExceptionFilter())
     await app.init()
 
     dataSource = moduleFixture.get(DataSource)

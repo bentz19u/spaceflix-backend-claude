@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEmail } from 'class-validator'
+import { IsEmail, IsNotEmpty } from 'class-validator'
+import { i18nValidationMessage } from 'nestjs-i18n'
 
 export class IsRegistrableQueryDto {
   @ApiProperty({
@@ -7,7 +8,8 @@ export class IsRegistrableQueryDto {
     type: String,
     example: 'user@example.com',
   })
-  @IsEmail()
+  @IsNotEmpty({ message: i18nValidationMessage('validation.REQUIRED') })
+  @IsEmail({}, { message: i18nValidationMessage('validation.NOT_EMAIL') })
   email: string
 }
 

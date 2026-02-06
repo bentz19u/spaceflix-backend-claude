@@ -1,0 +1,20 @@
+{
+  "REQUIRED": "The {property} field is required.",
+  "REQUIRED_NO_PROPERTY": "The field is required.",
+  "NOT_STRING": "The {property} field must be a string.",
+  "NOT_NUMBER": "The {property} field must contain only numbers.",
+  "NOT_ALPHA": "The {property} field may only contain alphabetical characters.",
+  "NOT_EMAIL": "The {property} field must be in email format.",
+  "NOT_MATCH": "The {property} field does not match {constraints.0}",
+  "PASSWORD_NOT_MATCH": "The passwords don't match",
+  "IS_SAME": "The {property} field is same with {constraints.0}",
+  "NOT_VALID": "The {property} field is invalid",
+  "MIN": "The {property} field must be at least {constraints.0} characters in length.",
+  "MAX": "The {property} field cannot exceed {constraints.0} characters in length.",
+  "BETWEEN": "The {property} must be between {constraints.0} and {constraints.1} characters.",
+  "BETWEEN_NUMBER": "The {property} must be between {constraints.0} and {constraints.1}.",
+  "LESS_THAN_EQUAL_TO": "The {property} field must contain a number less than or equal to {constraints.0}.",
+  "GREATER_THAN_EQUAL_TO": "The {property} field must contain a number greater than or equal to {constraints.0}.",
+  "IN_LIST": "The {property} field must be one of: {list}.",
+  "INVALID_PASSWORD": "The password is invalid."
+}
