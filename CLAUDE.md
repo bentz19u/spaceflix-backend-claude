@@ -42,3 +42,15 @@ NestJS modular structure rooted in `AppModule` (`src/app.module.ts`). New featur
 ## Project Preferences
 
 - **No .spec.ts files**: When creating new modules, do not generate `.spec.ts` test files for controllers, services, or other components.
+
+## Entity & Repository Pattern
+
+When creating a new entity:
+1. **Create a custom repository** alongside the entity for storing QueryBuilder queries
+2. **Only add methods to the repository** that use QueryBuilder (complex queries, joins, custom SQL)
+3. **Use default TypeORM methods directly** (`find()`, `findBy()`, `save()`, `delete()`, etc.) in services without wrapping them in the repository
+
+## File Naming Convention
+
+- **Plural** for module, entity, repository, service, controller (e.g., `users.module.ts`, `users.entity.ts`, `users.service.ts`)
+- **Singular** for DTOs or files pointing to a single instance (e.g., `user.dto.ts`, `create-user.dto.ts`)
