@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { HeaderResolver, I18nModule, QueryResolver } from 'nestjs-i18n'
 import * as path from 'path'
 import { DatabaseModule } from './database/database.module'
-import { RequestContextModule } from './request-context/request-context.module'
+import { RequestContextModule } from './common/request-context/request-context.module'
 import { UsersModule } from './users/users.module'
 
 @Module({

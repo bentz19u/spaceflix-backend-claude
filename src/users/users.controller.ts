@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common'
 import { ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { IsRegistrableQueryDto, IsRegistrableResponseDto } from './dto/is-registrable.dto'
-import { RequestLogger } from '../request-context/request-context.logger'
+import { RequestLogger } from '../common/request-context/request-context.logger'
 import { UserService } from './users.service'
 
 @ApiTags('users')
