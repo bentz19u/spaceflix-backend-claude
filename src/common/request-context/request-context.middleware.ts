@@ -1,6 +1,6 @@
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common'
 import { Request, Response, NextFunction } from 'express'
-import { randomUUID } from 'crypto'
+import * as short from 'short-uuid'
 import { requestContextStorage } from './request-context.storage'
 
 const SENSITIVE_FIELDS = ['password', 'token', 'secret', 'authorization', 'apikey', 'api_key', 'creditcard', 'credit_card']
@@ -10,7 +10,7 @@ export class RequestContextMiddleware implements NestMiddleware {
   private readonly logger = new Logger('HTTP')
 
   use(req: Request, res: Response, next: NextFunction) {
-    const requestId = (req.headers['x-request-id'] as string) || randomUUID()
+    const requestId = (req.headers['x-request-id'] as string) || short.generate()
 
     res.setHeader('x-request-id', requestId)
 
@@ -18,7 +18,7 @@ export class RequestContextMiddleware implements NestMiddleware {
     const hasBody = ['POST', 'PUT', 'PATCH'].includes(method) && Object.keys(body || {}).length > 0
     const bodyLog = hasBody ? ` Body: ${JSON.stringify(this.sanitizeBody(body))}` : ''
 
-    this.logger.log(`[${requestId}] ${method} ${originalUrl}${bodyLog}`)
+    this.logger.log(`[${requestId}] INCOMING ${method} ${originalUrl}${bodyLog}`)
 
     requestContextStorage.run({ requestId }, () => {
       next()

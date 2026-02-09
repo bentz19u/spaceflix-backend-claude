@@ -1,15 +1,17 @@
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import helmet from 'helmet'
-import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
+import { I18nValidationPipe } from 'nestjs-i18n'
 import { AppModule } from './app.module'
+import { HttpExceptionFilter } from './common/filters/http-exception.filter'
+import { I18nValidationExceptionFilter } from './common/filters/i18n-validation-exception.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
   app.use(helmet())
   app.useGlobalPipes(new I18nValidationPipe({ transform: true }))
-  app.useGlobalFilters(new I18nValidationExceptionFilter())
+  app.useGlobalFilters(new HttpExceptionFilter(), new I18nValidationExceptionFilter())
 
   const config = new DocumentBuilder()
     .setTitle('Spaceflix API')
