@@ -4,16 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { HeaderResolver, I18nModule, QueryResolver } from 'nestjs-i18n'
 import * as path from 'path'
 import { DatabaseModule } from './database/database.module'
+import { RequestContextModule } from './request-context/request-context.module'
 import { UsersModule } from './users/users.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath:
-        process.env.NODE_ENV === 'test'
-          ? ['.env.test.local', '.env.test']
-          : ['.env.local', '.env'],
+      envFilePath: process.env.NODE_ENV === 'test' ? ['.env.test.local', '.env.test'] : ['.env.local', '.env'],
     }),
     I18nModule.forRoot({
       fallbackLanguage: 'en',
@@ -36,6 +34,7 @@ import { UsersModule } from './users/users.module'
         synchronize: true,
       }),
     }),
+    RequestContextModule,
     UsersModule,
     DatabaseModule,
   ],

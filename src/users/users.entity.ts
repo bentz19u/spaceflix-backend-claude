@@ -1,10 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  DeleteDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity('users')
 export class User {
@@ -20,6 +14,6 @@ export class User {
   @CreateDateColumn({ type: 'timestamp', precision: 6, name: 'created_at' })
   createdAt: Date
 
-  @DeleteDateColumn({ type: 'datetime', precision: 6, name: 'deleted_at' })
+  @DeleteDateColumn({ type: 'timestamp', precision: 6, name: 'deleted_at' })
   deletedAt: Date | null
 }

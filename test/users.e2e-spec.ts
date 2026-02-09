@@ -80,10 +80,7 @@ describe('UsersController (e2e)', () => {
     })
 
     it('should return 400 when email is invalid', () => {
-      return request(app.getHttpServer())
-        .get('/users/is-registrable')
-        .query({ email: 'invalid-email' })
-        .expect(400)
+      return request(app.getHttpServer()).get('/users/is-registrable').query({ email: 'invalid-email' }).expect(400)
     })
 
     it('should return 400 when email is missing', () => {
