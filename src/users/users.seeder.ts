@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 import { User } from './users.entity'
 
@@ -22,8 +23,8 @@ export class UserSeeder {
     this.logger.log('Seeding users...')
 
     const users = [
-      { email: 'admin@spaceflix.local', password: 'password123' },
-      { email: 'user@spaceflix.local', password: 'password123' },
+      { email: 'admin@spaceflix.local', password: await bcrypt.hash('password123', 10) },
+      { email: 'user@spaceflix.local', password: await bcrypt.hash('password123', 10) },
     ]
 
     await this.userRepository.save(users)

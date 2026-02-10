@@ -4,6 +4,7 @@ import request from 'supertest'
 import { App } from 'supertest/types'
 import { DataSource } from 'typeorm'
 import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
+import * as bcrypt from 'bcrypt'
 import { AppModule } from '../src/app.module'
 import { User } from '../src/users/users.entity'
 
@@ -31,10 +32,16 @@ describe('UsersController (e2e)', () => {
     // Insert test data
     const userRepository = dataSource.getRepository(User)
 
-    const activeUser = userRepository.create(testUsers.active)
+    const activeUser = userRepository.create({
+      email: testUsers.active.email,
+      password: await bcrypt.hash(testUsers.active.password, 10),
+    })
     await userRepository.save(activeUser)
 
-    const deletedUser = userRepository.create(testUsers.deleted)
+    const deletedUser = userRepository.create({
+      email: testUsers.deleted.email,
+      password: await bcrypt.hash(testUsers.deleted.password, 10),
+    })
     await userRepository.save(deletedUser)
     await userRepository.softDelete({ email: testUsers.deleted.email })
   })

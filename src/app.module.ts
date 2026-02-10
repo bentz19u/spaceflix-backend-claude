@@ -3,8 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { HeaderResolver, I18nModule, QueryResolver } from 'nestjs-i18n'
 import * as path from 'path'
-import { DatabaseModule } from './database/database.module'
+import { AuthModule } from './auth/auth.module'
 import { RequestContextModule } from './common/request-context/request-context.module'
+import { DatabaseModule } from './database/database.module'
 import { UsersModule } from './users/users.module'
 
 @Module({
@@ -19,7 +20,10 @@ import { UsersModule } from './users/users.module'
         path: path.join(__dirname, '/i18n/'),
         watch: true,
       },
-      resolvers: [{ use: QueryResolver, options: ['lang'] }, { use: HeaderResolver, options: ['x-custom-lang'] }],
+      resolvers: [
+        { use: QueryResolver, options: ['lang'] },
+        { use: HeaderResolver, options: ['x-custom-lang'] },
+      ],
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -34,6 +38,7 @@ import { UsersModule } from './users/users.module'
         synchronize: true,
       }),
     }),
+    AuthModule,
     RequestContextModule,
     UsersModule,
     DatabaseModule,
