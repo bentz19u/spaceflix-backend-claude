@@ -1,5 +1,12 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
-import { ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger'
+import { BadRequestException, Body, Controller, Headers, HttpCode, HttpStatus, Post } from '@nestjs/common'
+import {
+  ApiForbiddenResponse,
+  ApiHeader,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger'
 import { AuthService } from './auth.service'
 import { LoginRequestDto } from './dto/login.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
@@ -12,9 +19,17 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
+  @ApiHeader({ name: 'remote_addr', description: 'Client IP address', required: true })
   @ApiOkResponse({ type: LoginResponseDto, description: 'Login successful' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  async login(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> {
-    return this.authService.login(dto)
+  @ApiForbiddenResponse({ description: 'Too many failed attempts' })
+  async login(
+    @Body() dto: LoginRequestDto,
+    @Headers('remote_addr') remoteAddr: string,
+  ): Promise<LoginResponseDto> {
+    if (!remoteAddr) {
+      throw new BadRequestException('remote_addr header is required')
+    }
+    return this.authService.login(dto, remoteAddr)
   }
 }
