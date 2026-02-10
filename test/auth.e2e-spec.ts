@@ -99,27 +99,36 @@ describe('AuthController (e2e)', () => {
       expect(savedToken!.ipAddress).toBe(loginIp)
     })
 
-    it('should return 400 when remote_addr header is missing', () => {
-      return request(app.getHttpServer())
+    it('should return 400 when remote_addr header is missing', async () => {
+      const response = await request(app.getHttpServer())
         .post('/auth/login')
         .send({ login: testUser.email, password: testUser.password })
         .expect(400)
+
+      expect(response.body.code).toBe('auth-login-0003')
+      expect(response.body.description).toBeDefined()
     })
 
-    it('should return 401 when email does not exist', () => {
-      return request(app.getHttpServer())
+    it('should return 401 when email does not exist', async () => {
+      const response = await request(app.getHttpServer())
         .post('/auth/login')
         .set('remote_addr', testIp)
         .send({ login: 'nonexistent@spaceflix.local', password: 'password123' })
         .expect(401)
+
+      expect(response.body.code).toBe('auth-login-0002')
+      expect(response.body.description).toBeDefined()
     })
 
-    it('should return 401 when password is incorrect', () => {
-      return request(app.getHttpServer())
+    it('should return 401 when password is incorrect', async () => {
+      const response = await request(app.getHttpServer())
         .post('/auth/login')
         .set('remote_addr', testIp)
         .send({ login: testUser.email, password: 'wrongpassword' })
         .expect(401)
+
+      expect(response.body.code).toBe('auth-login-0002')
+      expect(response.body.description).toBeDefined()
     })
 
     it('should return 400 when login is missing', () => {
@@ -188,7 +197,8 @@ describe('AuthController (e2e)', () => {
         .send({ login: testUser.email, password: testUser.password })
         .expect(403)
 
-      expect(response.body.message).toBe('Too many failed attempts')
+      expect(response.body.code).toBe('auth-login-0001')
+      expect(response.body.description).toBeDefined()
       expect(response.body.retryAfter).toBeDefined()
     })
 

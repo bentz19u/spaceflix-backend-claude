@@ -7,6 +7,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger'
+import { AUTH_ERRORS } from './auth.errors'
 import { AuthService } from './auth.service'
 import { LoginRequestDto } from './dto/login.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
@@ -28,7 +29,7 @@ export class AuthController {
     @Headers('remote_addr') remoteAddr: string,
   ): Promise<LoginResponseDto> {
     if (!remoteAddr) {
-      throw new BadRequestException('remote_addr header is required')
+      throw new BadRequestException(AUTH_ERRORS.LOGIN.MISSING_REMOTE_ADDR)
     }
     return this.authService.login(dto, remoteAddr)
   }

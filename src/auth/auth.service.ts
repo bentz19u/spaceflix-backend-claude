@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 import { User } from '../users/users.entity'
+import { AUTH_ERRORS } from './auth.errors'
 import { LoginRequestDto } from './dto/login.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
 import { LoginAttemptsService } from './login-attempts/login-attempts.service'
@@ -34,14 +35,14 @@ export class AuthService {
     })
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials')
+      throw new UnauthorizedException(AUTH_ERRORS.LOGIN.INVALID_CREDENTIALS)
     }
 
     // Check if user is blocked for this IP
     const blockStatus = await this.loginAttemptsService.checkBlocked(user.id, ipAddress)
     if (blockStatus.blocked) {
       throw new ForbiddenException({
-        message: 'Too many failed attempts',
+        ...AUTH_ERRORS.LOGIN.USER_BLOCKED,
         retryAfter: blockStatus.retryAfter,
       })
     }
@@ -50,7 +51,7 @@ export class AuthService {
 
     if (!isPasswordValid) {
       await this.loginAttemptsService.recordFailedAttempt(user.id, ipAddress)
-      throw new UnauthorizedException('Invalid credentials')
+      throw new UnauthorizedException(AUTH_ERRORS.LOGIN.INVALID_CREDENTIALS)
     }
 
     // Archive previous failed attempts on successful login
