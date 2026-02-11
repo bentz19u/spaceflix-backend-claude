@@ -13,4 +13,10 @@ export const AUTH_ERRORS = {
       description: 'Missing remote_addr header. Please contact support.',
     },
   },
+  LOGOUT: {
+    MISSING_REMOTE_ADDR: {
+      code: 'auth-logout-0001',
+      description: 'Missing remote_addr header. Please contact support.',
+    },
+  },
 }

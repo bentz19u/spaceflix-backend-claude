@@ -50,6 +50,10 @@ export class AuthService {
     return { accessToken, refreshToken }
   }
 
+  async logout(userId: number, ipAddress: string): Promise<void> {
+    await this.userTokenRepository.delete({ userId, ipAddress })
+  }
+
   private async findUserByEmail(email: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { email } })
     if (!user) {

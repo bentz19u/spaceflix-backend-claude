@@ -413,4 +413,73 @@ describe('AuthController (e2e)', () => {
       expect(body.refreshToken).toBe('')
     })
   })
+
+  describe('POST /auth/logout', () => {
+    it('should successfully logout and remove token from database', async () => {
+      const logoutIp = '192.168.1.180'
+
+      // First login to get a token
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', logoutIp)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      // Verify token exists in database
+      const userRepository = dataSource.getRepository(User)
+      const userTokenRepository = dataSource.getRepository(UserToken)
+      const user = await userRepository.findOne({ where: { email: testUser.email } })
+      let savedToken = await userTokenRepository.findOne({
+        where: { userId: user!.id, ipAddress: logoutIp },
+      })
+      expect(savedToken).not.toBeNull()
+
+      // Logout
+      await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('remote_addr', logoutIp)
+        .set('Authorization', `Bearer ${loginBody.accessToken}`)
+        .expect(200)
+
+      // Verify token is removed from database
+      savedToken = await userTokenRepository.findOne({
+        where: { userId: user!.id, ipAddress: logoutIp },
+      })
+      expect(savedToken).toBeNull()
+    })
+
+    it('should return 401 when no auth token provided', async () => {
+      await request(app.getHttpServer()).post('/auth/logout').set('remote_addr', testIp).expect(401)
+    })
+
+    it('should return 401 when invalid token provided', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('remote_addr', testIp)
+        .set('Authorization', 'Bearer invalid-token')
+        .expect(401)
+    })
+
+    it('should return 400 when remote_addr header is missing', async () => {
+      // First login to get a valid token
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', testIp)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Authorization', `Bearer ${loginBody.accessToken}`)
+        .expect(400)
+
+      const body = response.body as ErrorResponseDto
+      expect(body.code).toBe('auth-logout-0001')
+      expect(body.description).toBeDefined()
+    })
+  })
 })
