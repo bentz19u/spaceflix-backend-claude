@@ -24,10 +24,7 @@ export class AuthController {
   @ApiOkResponse({ type: LoginResponseDto, description: 'Login successful' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiForbiddenResponse({ description: 'Too many failed attempts' })
-  async login(
-    @Body() dto: LoginRequestDto,
-    @Headers('remote_addr') remoteAddr: string,
-  ): Promise<LoginResponseDto> {
+  async login(@Body() dto: LoginRequestDto, @Headers('remote_addr') remoteAddr: string): Promise<LoginResponseDto> {
     if (!remoteAddr) {
       throw new BadRequestException(AUTH_ERRORS.LOGIN.MISSING_REMOTE_ADDR)
     }

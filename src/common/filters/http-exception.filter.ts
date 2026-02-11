@@ -24,5 +24,5 @@ export class HttpExceptionFilter implements ExceptionFilter {
       ...errorResponse,
       requestId: getRequestId(),
     })
-  } 
+  }
 }

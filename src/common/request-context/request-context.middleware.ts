@@ -3,7 +3,16 @@ import { Request, Response, NextFunction } from 'express'
 import * as short from 'short-uuid'
 import { requestContextStorage } from './request-context.storage'
 
-const SENSITIVE_FIELDS = ['password', 'token', 'secret', 'authorization', 'apikey', 'api_key', 'creditcard', 'credit_card']
+const SENSITIVE_FIELDS = [
+  'password',
+  'token',
+  'secret',
+  'authorization',
+  'apikey',
+  'api_key',
+  'creditcard',
+  'credit_card',
+]
 
 @Injectable()
 export class RequestContextMiddleware implements NestMiddleware {
@@ -14,9 +23,10 @@ export class RequestContextMiddleware implements NestMiddleware {
 
     res.setHeader('x-request-id', requestId)
 
-    const { method, originalUrl, body } = req
-    const hasBody = ['POST', 'PUT', 'PATCH'].includes(method) && Object.keys(body || {}).length > 0
-    const bodyLog = hasBody ? ` Body: ${JSON.stringify(this.sanitizeBody(body))}` : ''
+    const { method, originalUrl } = req
+    const body = req.body as Record<string, unknown> | undefined
+    const hasBody = ['POST', 'PUT', 'PATCH'].includes(method) && Object.keys(body ?? {}).length > 0
+    const bodyLog = hasBody ? ` Body: ${JSON.stringify(this.sanitizeBody(body ?? {}))}` : ''
 
     this.logger.log(`[${requestId}] INCOMING ${method} ${originalUrl}${bodyLog}`)
 

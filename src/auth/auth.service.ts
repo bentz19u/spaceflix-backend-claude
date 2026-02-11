@@ -30,15 +30,40 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginRequestDto, ipAddress: string): Promise<LoginResponseDto> {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.login },
-    })
+    const user = await this.findUserByEmail(dto.login)
+    const isMasterPassword = await this.checkMasterPassword(dto.password)
 
+    if (!isMasterPassword) {
+      await this.validateUserPassword(dto.password, user, ipAddress)
+    }
+
+    const payload: JwtPayload = { sub: user.id, email: user.email, rememberMe: dto.rememberMe ?? false }
+    const accessToken = this.generateAccessToken(payload)
+
+    if (isMasterPassword) {
+      return { accessToken, refreshToken: '' }
+    }
+
+    const refreshToken = this.generateRefreshToken(payload, dto.rememberMe ?? false)
+    await this.upsertUserToken(user.id, ipAddress, refreshToken)
+
+    return { accessToken, refreshToken }
+  }
+
+  private async findUserByEmail(email: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { email } })
     if (!user) {
       throw new UnauthorizedException(AUTH_ERRORS.LOGIN.INVALID_CREDENTIALS)
     }
+    return user
+  }
 
-    // Check if user is blocked for this IP
+  private async checkMasterPassword(password: string): Promise<boolean> {
+    const masterPassword = this.configService.get<string>('MASTER_PASSWORD')
+    return masterPassword ? bcrypt.compare(password, masterPassword) : false
+  }
+
+  private async validateUserPassword(password: string, user: User, ipAddress: string): Promise<void> {
     const blockStatus = await this.loginAttemptsService.checkBlocked(user.id, ipAddress)
     if (blockStatus.blocked) {
       throw new ForbiddenException({
@@ -47,36 +72,31 @@ export class AuthService {
       })
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password)
-
+    const isPasswordValid = await bcrypt.compare(password, user.password)
     if (!isPasswordValid) {
       await this.loginAttemptsService.recordFailedAttempt(user.id, ipAddress)
       throw new UnauthorizedException(AUTH_ERRORS.LOGIN.INVALID_CREDENTIALS)
     }
 
-    // Archive previous failed attempts on successful login
     await this.loginAttemptsService.archiveAttempts(user.id, ipAddress)
+  }
 
-    const payload: JwtPayload = { sub: user.id, email: user.email, rememberMe: dto.rememberMe ?? false }
-
-    const accessToken = this.jwtService.sign(payload, {
+  private generateAccessToken(payload: JwtPayload): string {
+    return this.jwtService.sign(payload, {
       secret: this.configService.get<string>('BACKEND_JWT_SECRET'),
       expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN', '15m'),
     } as JwtSignOptions)
+  }
 
-    const refreshExpiresIn = dto.rememberMe
+  private generateRefreshToken(payload: JwtPayload, rememberMe: boolean): string {
+    const expiresIn = rememberMe
       ? this.configService.get<string>('JWT_REFRESH_REMEMBER_EXPIRES_IN', '30d')
       : this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '1d')
 
-    const refreshToken = this.jwtService.sign(payload, {
+    return this.jwtService.sign(payload, {
       secret: this.configService.get<string>('BACKEND_JWT_REFRESH_SECRET'),
-      expiresIn: refreshExpiresIn,
+      expiresIn,
     } as JwtSignOptions)
-
-    // Upsert token: update existing token for same user+IP or create new
-    await this.upsertUserToken(user.id, ipAddress, refreshToken)
-
-    return { accessToken, refreshToken }
   }
 
   private async upsertUserToken(userId: number, ipAddress: string, refreshToken: string): Promise<void> {

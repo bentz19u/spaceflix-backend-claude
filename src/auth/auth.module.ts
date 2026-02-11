@@ -9,10 +9,7 @@ import { LoginAttemptsService } from './login-attempts/login-attempts.service'
 import { UserToken } from './user-tokens.entity'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, UserToken, LoginAttempt]),
-    JwtModule.register({}),
-  ],
+  imports: [TypeOrmModule.forFeature([User, UserToken, LoginAttempt]), JwtModule.register({})],
   controllers: [AuthController],
   providers: [AuthService, LoginAttemptsService],
   exports: [AuthService, JwtModule],

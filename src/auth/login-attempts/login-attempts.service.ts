@@ -51,10 +51,7 @@ export class LoginAttemptsService {
   }
 
   async archiveAttempts(userId: number, ipAddress: string): Promise<void> {
-    await this.loginAttemptRepository.update(
-      { userId, ipAddress, archivedAt: IsNull() },
-      { archivedAt: new Date() },
-    )
+    await this.loginAttemptRepository.update({ userId, ipAddress, archivedAt: IsNull() }, { archivedAt: new Date() })
   }
 
   private calculateBlockedUntil(failedCount: number): Date | null {
