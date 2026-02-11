@@ -1,17 +1,20 @@
 import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
+import { PassportModule } from '@nestjs/passport'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { User } from '../users/users.entity'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { LoginAttempt } from './login-attempts/login-attempts.entity'
 import { LoginAttemptsService } from './login-attempts/login-attempts.service'
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy'
+import { JwtStrategy } from './strategies/jwt.strategy'
 import { UserToken } from './user-tokens.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, UserToken, LoginAttempt]), JwtModule.register({})],
+  imports: [TypeOrmModule.forFeature([User, UserToken, LoginAttempt]), PassportModule, JwtModule.register({})],
   controllers: [AuthController],
-  providers: [AuthService, LoginAttemptsService],
+  providers: [AuthService, LoginAttemptsService, JwtStrategy, JwtRefreshStrategy],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

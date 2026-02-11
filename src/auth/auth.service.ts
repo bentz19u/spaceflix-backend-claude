@@ -8,6 +8,7 @@ import { User } from '../users/users.entity'
 import { AUTH_ERRORS } from './auth.errors'
 import { LoginRequestDto } from './dto/login.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
+import { RefreshResponseDto } from './dto/refresh-response.dto'
 import { LoginAttemptsService } from './login-attempts/login-attempts.service'
 import { UserToken } from './user-tokens.entity'
 
@@ -52,6 +53,42 @@ export class AuthService {
 
   async logout(userId: number, ipAddress: string): Promise<void> {
     await this.userTokenRepository.delete({ userId, ipAddress })
+  }
+
+  async refreshTokens(
+    userId: number,
+    refreshToken: string,
+    rememberMe: boolean,
+    ipAddress: string,
+  ): Promise<RefreshResponseDto> {
+    const storedToken = await this.userTokenRepository.findOne({
+      where: { userId, ipAddress },
+    })
+
+    if (!storedToken || storedToken.refreshToken !== refreshToken) {
+      throw new UnauthorizedException(AUTH_ERRORS.REFRESH.TOKEN_NOT_FOUND)
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user) {
+      throw new UnauthorizedException(AUTH_ERRORS.REFRESH.TOKEN_NOT_FOUND)
+    }
+
+    const newPayload: JwtPayload = {
+      sub: userId,
+      email: user.email,
+      rememberMe,
+    }
+
+    const newAccessToken = this.generateAccessToken(newPayload)
+    const newRefreshToken = this.generateRefreshToken(newPayload, rememberMe)
+
+    await this.upsertUserToken(userId, ipAddress, newRefreshToken)
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    }
   }
 
   private async findUserByEmail(email: string): Promise<User> {

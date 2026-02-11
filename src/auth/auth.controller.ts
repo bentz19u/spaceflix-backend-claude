@@ -14,7 +14,10 @@ import type { JwtPayload } from './auth.service'
 import { CurrentUser } from './decorators/current-user.decorator'
 import { LoginRequestDto } from './dto/login.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
+import { RefreshResponseDto } from './dto/refresh-response.dto'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard'
+import type { JwtRefreshPayload } from './strategies/jwt-refresh.strategy'
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -33,6 +36,24 @@ export class AuthController {
       throw new BadRequestException(AUTH_ERRORS.LOGIN.MISSING_REMOTE_ADDR)
     }
     return this.authService.login(dto, remoteAddr)
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtRefreshGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiHeader({ name: 'remote_addr', description: 'Client IP address', required: true })
+  @ApiOkResponse({ type: RefreshResponseDto, description: 'Tokens refreshed successfully' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired refresh token' })
+  async refresh(
+    @CurrentUser() user: JwtRefreshPayload,
+    @Headers('remote_addr') remoteAddr: string,
+  ): Promise<RefreshResponseDto> {
+    if (!remoteAddr) {
+      throw new BadRequestException(AUTH_ERRORS.REFRESH.MISSING_REMOTE_ADDR)
+    }
+    return this.authService.refreshTokens(user.sub, user.refreshToken, user.rememberMe, remoteAddr)
   }
 
   @Post('logout')

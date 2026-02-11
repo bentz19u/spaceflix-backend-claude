@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import { Response } from 'express'
+import { HTTP_ERRORS } from '../errors/http.errors'
 import { getRequestId } from '../request-context/request-context.storage'
 
 @Catch()
@@ -19,6 +20,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const errorResponse =
       typeof exceptionResponse === 'string' ? { message: exceptionResponse } : { ...exceptionResponse }
+
+    // Add default error code if not provided
+    if (!('code' in errorResponse)) {
+      const defaultError = HTTP_ERRORS[status]
+      if (defaultError) {
+        Object.assign(errorResponse, defaultError)
+      }
+    }
 
     response.status(status).json({
       ...errorResponse,

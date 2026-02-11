@@ -4,6 +4,7 @@ import request from 'supertest'
 import { App } from 'supertest/types'
 import { DataSource } from 'typeorm'
 import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
+import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter'
 import * as bcrypt from 'bcrypt'
 import { AppModule } from '../src/app.module'
 import { User } from '../src/users/users.entity'
@@ -24,7 +25,7 @@ describe('UsersController (e2e)', () => {
 
     app = moduleFixture.createNestApplication()
     app.useGlobalPipes(new I18nValidationPipe({ transform: true }))
-    app.useGlobalFilters(new I18nValidationExceptionFilter())
+    app.useGlobalFilters(new HttpExceptionFilter(), new I18nValidationExceptionFilter())
     await app.init()
 
     dataSource = moduleFixture.get(DataSource)

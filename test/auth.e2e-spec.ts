@@ -4,12 +4,14 @@ import request from 'supertest'
 import { App } from 'supertest/types'
 import { DataSource } from 'typeorm'
 import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
+import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter'
 import * as bcrypt from 'bcrypt'
 import { AppModule } from '../src/app.module'
 import { User } from '../src/users/users.entity'
 import { UserToken } from '../src/auth/user-tokens.entity'
 import { LoginAttempt } from '../src/auth/login-attempts/login-attempts.entity'
 import { LoginResponseDto } from '../src/auth/dto/login-response.dto'
+import { RefreshResponseDto } from '../src/auth/dto/refresh-response.dto'
 import { ErrorResponseDto } from '../src/common/dto/error-response.dto'
 
 describe('AuthController (e2e)', () => {
@@ -29,7 +31,7 @@ describe('AuthController (e2e)', () => {
 
     app = moduleFixture.createNestApplication()
     app.useGlobalPipes(new I18nValidationPipe({ transform: true }))
-    app.useGlobalFilters(new I18nValidationExceptionFilter())
+    app.useGlobalFilters(new HttpExceptionFilter(), new I18nValidationExceptionFilter())
     await app.init()
 
     dataSource = moduleFixture.get(DataSource)
@@ -480,6 +482,269 @@ describe('AuthController (e2e)', () => {
       const body = response.body as ErrorResponseDto
       expect(body.code).toBe('auth-logout-0001')
       expect(body.description).toBeDefined()
+    })
+  })
+
+  describe('POST /auth/refresh', () => {
+    it('should successfully refresh tokens with valid refresh token', async () => {
+      const refreshIp = '192.168.2.1'
+
+      // Login to get tokens
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', refreshIp)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      // Wait to ensure different JWT timestamp
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Refresh tokens
+      const refreshResponse = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', refreshIp)
+        .set('Authorization', `Bearer ${loginBody.refreshToken}`)
+        .expect(200)
+
+      const refreshBody = refreshResponse.body as RefreshResponseDto
+      expect(refreshBody).toHaveProperty('accessToken')
+      expect(refreshBody).toHaveProperty('refreshToken')
+      expect(typeof refreshBody.accessToken).toBe('string')
+      expect(typeof refreshBody.refreshToken).toBe('string')
+      expect(refreshBody.accessToken).not.toBe(loginBody.accessToken)
+      expect(refreshBody.refreshToken).not.toBe(loginBody.refreshToken)
+    })
+
+    it('should return new access token that works for authenticated requests', async () => {
+      const refreshIp = '192.168.2.2'
+
+      // Login to get tokens
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', refreshIp)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      // Refresh tokens
+      const refreshResponse = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', refreshIp)
+        .set('Authorization', `Bearer ${loginBody.refreshToken}`)
+        .expect(200)
+
+      const refreshBody = refreshResponse.body as RefreshResponseDto
+
+      // Use new access token for authenticated request (logout)
+      await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('remote_addr', refreshIp)
+        .set('Authorization', `Bearer ${refreshBody.accessToken}`)
+        .expect(200)
+    })
+
+    it('should rotate refresh token (old token invalidated)', async () => {
+      const refreshIp = '192.168.2.3'
+
+      // Login to get tokens
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', refreshIp)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      // Wait to ensure different JWT timestamp
+      await new Promise((resolve) => setTimeout(resolve, 1100))
+
+      // First refresh - should succeed and rotate the token
+      const firstRefreshResponse = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', refreshIp)
+        .set('Authorization', `Bearer ${loginBody.refreshToken}`)
+        .expect(200)
+
+      const firstRefreshBody = firstRefreshResponse.body as RefreshResponseDto
+      expect(firstRefreshBody.refreshToken).not.toBe(loginBody.refreshToken)
+
+      // Second refresh with old token - should fail because token was rotated
+      const response = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', refreshIp)
+        .set('Authorization', `Bearer ${loginBody.refreshToken}`)
+        .expect(401)
+
+      const body = response.body as ErrorResponseDto
+      expect(body.code).toBe('auth-refresh-0003')
+    })
+
+    it('should return 400 when remote_addr header is missing', async () => {
+      // Login to get a valid refresh token
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', testIp)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      // Call refresh without remote_addr header
+      const response = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('Authorization', `Bearer ${loginBody.refreshToken}`)
+        .expect(400)
+
+      const body = response.body as ErrorResponseDto
+      expect(body.code).toBe('auth-refresh-0001')
+      expect(body.description).toBeDefined()
+    })
+
+    it('should return 401 for invalid/malformed refresh token', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', testIp)
+        .set('Authorization', 'Bearer invalid-malformed-token')
+        .expect(401)
+
+      const body = response.body as ErrorResponseDto
+      expect(body.code).toBe('http-0401')
+    })
+
+    it('should return 401 when no authorization header provided', async () => {
+      const response = await request(app.getHttpServer()).post('/auth/refresh').set('remote_addr', testIp).expect(401)
+
+      const body = response.body as ErrorResponseDto
+      expect(body.code).toBe('http-0401')
+    })
+
+    it('should return 401 when token not found in database (after logout)', async () => {
+      const refreshIp = '192.168.2.4'
+
+      // Login to get tokens
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', refreshIp)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      // Logout to remove token from database
+      await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('remote_addr', refreshIp)
+        .set('Authorization', `Bearer ${loginBody.accessToken}`)
+        .expect(200)
+
+      // Try to refresh with the old token
+      const response = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', refreshIp)
+        .set('Authorization', `Bearer ${loginBody.refreshToken}`)
+        .expect(401)
+
+      const body = response.body as ErrorResponseDto
+      expect(body.code).toBe('auth-refresh-0003')
+    })
+
+    it('should return 401 when IP address does not match stored token', async () => {
+      const loginIp = '192.168.2.5'
+      const differentIp = '192.168.2.6'
+
+      // Login from first IP
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', loginIp)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      // Try to refresh from different IP
+      const response = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', differentIp)
+        .set('Authorization', `Bearer ${loginBody.refreshToken}`)
+        .expect(401)
+
+      const body = response.body as ErrorResponseDto
+      expect(body.code).toBe('auth-refresh-0003')
+    })
+
+    it('should work correctly with rememberMe tokens', async () => {
+      const refreshIp = '192.168.2.7'
+
+      // Login with rememberMe
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', refreshIp)
+        .send({ login: testUser.email, password: testUser.password, rememberMe: true })
+        .expect(200)
+
+      const loginBody = loginResponse.body as LoginResponseDto
+
+      // Refresh tokens
+      const refreshResponse = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', refreshIp)
+        .set('Authorization', `Bearer ${loginBody.refreshToken}`)
+        .expect(200)
+
+      const refreshBody = refreshResponse.body as RefreshResponseDto
+      expect(refreshBody.accessToken).toBeDefined()
+      expect(refreshBody.refreshToken).toBeDefined()
+    })
+
+    it('should allow multiple IPs to refresh independently', async () => {
+      const ip1 = '192.168.2.8'
+      const ip2 = '192.168.2.9'
+
+      // Login from first IP
+      const loginResponse1 = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', ip1)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      // Wait to get different JWT timestamp
+      await new Promise((resolve) => setTimeout(resolve, 1100))
+
+      // Login from second IP
+      const loginResponse2 = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('remote_addr', ip2)
+        .send({ login: testUser.email, password: testUser.password })
+        .expect(200)
+
+      const loginBody1 = loginResponse1.body as LoginResponseDto
+      const loginBody2 = loginResponse2.body as LoginResponseDto
+
+      // Refresh from first IP
+      const refreshResponse1 = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', ip1)
+        .set('Authorization', `Bearer ${loginBody1.refreshToken}`)
+        .expect(200)
+
+      // Refresh from second IP (should still work independently)
+      const refreshResponse2 = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('remote_addr', ip2)
+        .set('Authorization', `Bearer ${loginBody2.refreshToken}`)
+        .expect(200)
+
+      const refreshBody1 = refreshResponse1.body as RefreshResponseDto
+      const refreshBody2 = refreshResponse2.body as RefreshResponseDto
+
+      // Both IPs can refresh independently and get valid tokens
+      expect(refreshBody1.accessToken).toBeDefined()
+      expect(refreshBody1.refreshToken).toBeDefined()
+      expect(refreshBody2.accessToken).toBeDefined()
+      expect(refreshBody2.refreshToken).toBeDefined()
     })
   })
 })

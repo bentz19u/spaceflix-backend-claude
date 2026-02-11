@@ -19,4 +19,18 @@ export const AUTH_ERRORS = {
       description: 'Missing remote_addr header. Please contact support.',
     },
   },
+  REFRESH: {
+    MISSING_REMOTE_ADDR: {
+      code: 'auth-refresh-0001',
+      description: 'Missing remote_addr header. Please contact support.',
+    },
+    INVALID_TOKEN: {
+      code: 'auth-refresh-0002',
+      description: 'Invalid or expired refresh token.',
+    },
+    TOKEN_NOT_FOUND: {
+      code: 'auth-refresh-0003',
+      description: 'Refresh token not found or has been revoked.',
+    },
+  },
 }
