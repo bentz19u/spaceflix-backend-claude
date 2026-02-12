@@ -17,10 +17,11 @@ async function bootstrap() {
     .setTitle('Spaceflix API')
     .setDescription('The Spaceflix REST API')
     .setVersion('1.0')
+    .addBearerAuth()
     .build()
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api', app, document)
-
+  
   await app.listen(process.env.PORT ?? 3000)
 }
 void bootstrap()

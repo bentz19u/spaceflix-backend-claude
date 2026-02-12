@@ -65,7 +65,12 @@ export class AuthService {
       where: { userId, ipAddress },
     })
 
-    if (!storedToken || storedToken.refreshToken !== refreshToken) {
+    if (!storedToken) {
+      throw new UnauthorizedException(AUTH_ERRORS.REFRESH.TOKEN_NOT_FOUND)
+    }
+
+    const isValidToken = await bcrypt.compare(refreshToken, storedToken.refreshToken)
+    if (!isValidToken) {
       throw new UnauthorizedException(AUTH_ERRORS.REFRESH.TOKEN_NOT_FOUND)
     }
 
@@ -141,15 +146,16 @@ export class AuthService {
   }
 
   private async upsertUserToken(userId: number, ipAddress: string, refreshToken: string): Promise<void> {
+    const hashedToken = await bcrypt.hash(refreshToken, 10)
     const existingToken = await this.userTokenRepository.findOne({
       where: { userId, ipAddress },
     })
 
     if (existingToken) {
-      existingToken.refreshToken = refreshToken
+      existingToken.refreshToken = hashedToken
       await this.userTokenRepository.save(existingToken)
     } else {
-      await this.userTokenRepository.save({ userId, ipAddress, refreshToken })
+      await this.userTokenRepository.save({ userId, ipAddress, refreshToken: hashedToken })
     }
   }
 }

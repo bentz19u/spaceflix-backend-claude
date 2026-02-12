@@ -12,10 +12,11 @@ export interface JwtRefreshPayload extends JwtPayload {
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(configService: ConfigService) {
+    const secret = configService.getOrThrow<string>('BACKEND_JWT_REFRESH_SECRET')
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('BACKEND_JWT_REFRESH_SECRET'),
-      passReqToCallback: true,
+      secretOrKey: secret,
+      passReqToCallback: true as const,
     })
   }
 

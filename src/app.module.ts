@@ -35,7 +35,7 @@ import { UsersModule } from './users/users.module'
         password: config.get('DATABASE_PASSWORD'),
         database: config.get('DATABASE_SCHEMA'),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: config.get('NODE_ENV') !== 'production',
       }),
     }),
     AuthModule,
