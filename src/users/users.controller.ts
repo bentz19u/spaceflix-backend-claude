@@ -1,7 +1,9 @@
-import { Controller, Get, Query } from '@nestjs/common'
-import { ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
-import { IsRegistrableQueryDto, IsRegistrableResponseDto } from './dto/is-registrable.dto'
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common'
+import { ApiConflictResponse, ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ErrorResponseDto } from '../common/dto/error-response.dto'
 import { RequestLogger } from '../common/request-context/request-context.logger'
+import { IsRegistrableQueryDto, IsRegistrableResponseDto } from './dto/is-registrable.dto'
+import { RegisterStep1RequestDto, RegisterStep1ResponseDto } from './dto/register-step1.dto'
 import { UserService } from './users.service'
 
 @ApiTags('users')
@@ -26,5 +28,14 @@ export class UserController {
   async isRegistrable(@Query() query: IsRegistrableQueryDto): Promise<IsRegistrableResponseDto> {
     this.logger.log(`Checking registration for email: ${query.email}`)
     return this.userService.checkRegistrable(query.email)
+  }
+
+  @Post('register/step1')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Registration step 1 - validate email and password' })
+  @ApiOkResponse({ type: RegisterStep1ResponseDto, description: 'Email and password validated successfully' })
+  @ApiConflictResponse({ type: ErrorResponseDto, description: 'Email already registered' })
+  async registerStep1(@Body() dto: RegisterStep1RequestDto): Promise<RegisterStep1ResponseDto> {
+    return this.userService.registerStep1(dto)
   }
 }
