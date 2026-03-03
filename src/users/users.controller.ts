@@ -1,7 +1,15 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common'
-import { ApiConflictResponse, ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
+import {
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiHeader,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger'
 import { ErrorResponseDto } from '../common/dto/error-response.dto'
 import { RequestLogger } from '../common/request-context/request-context.logger'
+import { CreateUserRequestDto, CreateUserResponseDto } from './dto/create-user.dto'
 import { IsRegistrableQueryDto, IsRegistrableResponseDto } from './dto/is-registrable.dto'
 import { RegisterStep1RequestDto, RegisterStep1ResponseDto } from './dto/register-step1.dto'
 import { UserService } from './users.service'
@@ -37,5 +45,15 @@ export class UserController {
   @ApiConflictResponse({ type: ErrorResponseDto, description: 'Email already registered' })
   async registerStep1(@Body() dto: RegisterStep1RequestDto): Promise<RegisterStep1ResponseDto> {
     return this.userService.registerStep1(dto)
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new user (registration step 2)' })
+  @ApiCreatedResponse({ type: CreateUserResponseDto, description: 'User created successfully' })
+  @ApiConflictResponse({ type: ErrorResponseDto, description: 'Email already registered' })
+  async create(@Body() dto: CreateUserRequestDto): Promise<CreateUserResponseDto> {
+    const id = await this.userService.create(dto)
+    return { id }
   }
 }
